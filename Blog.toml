@@ -1,0 +1,11 @@
+[server]
+host = "127.0.0.1"
+port = 8080
+database_url = "postgres://quickn:testserver@localhost/blog"
+
+[blog]
+name = "ANEP Research"
+url = "https://quickn.tech"
+
+[secret]
+secret = "quickn_blog"

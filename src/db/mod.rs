@@ -1,0 +1,56 @@
+pub mod models;
+pub mod schema;
+
+use crate::api::account_service::errors::AccountError;
+use crate::middlewares::postgresql::establish_connection;
+use diesel::prelude::*;
+use models::*;
+use schema::*;
+use sha3::{Digest, Sha3_256};
+
+pub fn register<'a>(
+    username: &'a str,
+    pass: &'a str,
+    email: &'a str,
+    nickname: &'a str,
+    permission: AccountLevel,
+) -> QueryResult<User> {
+    let db = establish_connection();
+    let mut hasher = Sha3_256::new();
+    hasher.update(pass.as_bytes());
+    let pass_hashed = hex::encode(hasher.finalize());
+    let new_user = Register {
+        username,
+        pass: &pass_hashed,
+        email,
+        nickname,
+        permission: permission as i32,
+    };
+    diesel::insert_into(users::table)
+        .values(&new_user)
+        .get_result(&db)
+}
+
+pub fn login<'a>(username: &'a str, pass: &'a str) -> QueryResult<(AccountError, i32)> {
+    let db = establish_connection();
+    let mut hasher = Sha3_256::new();
+    hasher.update(pass.as_bytes());
+    let pass_hashed = hasher.finalize();
+    let mut items = users::table
+        .filter(users::dsl::username.eq(username))
+        .load::<User>(&db)?;
+    if let Some(user) = items.pop() {
+        if hex::encode(pass_hashed) == user.pass {
+            Ok((AccountError::Nothing, user.id))
+        } else {
+            Ok((AccountError::PassNotMatched, -1))
+        }
+    } else {
+        Ok((AccountError::UserNotExists, -1))
+    }
+}
+
+pub fn find_user<'a>(pk: i32) -> QueryResult<User> {
+    let db = establish_connection();
+    users::table.find(pk).first(&db)
+}
