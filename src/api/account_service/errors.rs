@@ -6,4 +6,6 @@ pub enum AccountError {
     PassNotMatched,
     UserNotExists,
     DatabaseError,
+    UsernameAlreadyExists,
+    EmailAlreadyExists,
 }

@@ -54,3 +54,17 @@ pub fn find_user<'a>(pk: i32) -> QueryResult<User> {
     let db = establish_connection();
     users::table.find(pk).first(&db)
 }
+
+pub fn by_username<'a>(username: &'a str) -> QueryResult<Vec<User>> {
+    let db = establish_connection();
+    users::table
+        .filter(users::dsl::username.eq(username))
+        .load::<User>(&db)
+}
+
+pub fn by_email<'a>(email: &'a str) -> QueryResult<Vec<User>> {
+    let db = establish_connection();
+    users::table
+        .filter(users::dsl::email.eq(email))
+        .load::<User>(&db)
+}

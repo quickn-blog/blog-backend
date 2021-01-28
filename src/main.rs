@@ -38,6 +38,7 @@ async fn main() -> std::io::Result<()> {
             .service(Files::new("/static", "static/").show_files_listing())
             .service(api::account_service::ping)
             .service(api::account_service::login)
+            .service(api::account_service::register)
     })
     .bind(&format!("{}:{}", config.server.host, config.server.port))?
     .run()

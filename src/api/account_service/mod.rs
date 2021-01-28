@@ -5,6 +5,7 @@ pub mod errors;
 
 use crate::db;
 use crate::CONFIG;
+use crate::db::models::AccountLevel;
 use errors::AccountError;
 // use hmac::{Hmac, NewMac};
 use jwt_simple::prelude::*;
@@ -30,6 +31,19 @@ pub struct LoginForm {
 pub struct LoginResponse {
     result: AccountError,
     token: Option<String>, // JWT token
+}
+
+#[derive(Clone, Serialize, Deserialize)]
+pub struct RegisterForm {
+    username: String,
+    pass: String,
+    email: String,
+    nickname: String,
+}
+
+#[derive(Clone, Serialize, Deserialize)]
+pub struct RegisterResponse {
+    result: AccountError,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Deserialize, Serialize)]
@@ -75,3 +89,30 @@ pub async fn login(form: web::Json<LoginForm>) -> HttpResponse {
             body: Some(json),
         })
 }
+
+#[post("/api/account_service/register")]
+pub async fn register(form: web::Json<RegisterForm>) -> HttpResponse {
+    let mut result = AccountError::Nothing;
+    let v1 = db::by_username(&form.username).unwrap_or(vec![]);
+    let v2 = db::by_email(&form.email).unwrap_or(vec![]);
+    if !v1.is_empty() {
+        result = AccountError::UsernameAlreadyExists;
+    }
+    if !v2.is_empty() {
+        result = AccountError::EmailAlreadyExists;
+    }
+    if v1.is_empty() && v2.is_empty() {
+        if let Err(_) = db::register(&form.username, &form.pass, &form.email, &form.nickname, AccountLevel::Default) {
+            result = AccountError::DatabaseError;
+        }
+    }
+    HttpResponse::Ok()
+        .content_type("application/json")
+        .json(ResponseBlock {
+            status: true,
+            body: Some(RegisterResponse {
+                result,
+            }),
+        })
+}
+

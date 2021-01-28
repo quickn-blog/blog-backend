@@ -7,5 +7,5 @@ database_url = "postgres://quickn:testserver@localhost/blog"
 name = "ANEP Research"
 url = "https://quickn.tech"
 
-[secret]
+[secret]                                 
 secret = "quickn_blog"
