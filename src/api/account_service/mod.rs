@@ -21,7 +21,7 @@ pub struct Ping {
     reply: String,
 }
 
-#[derive(Clone, Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize, Debug, Default)]
 pub struct LoginForm {
     username: String,
     pass: String,
@@ -51,6 +51,19 @@ pub struct AccountToken {
     pk: i32,
 }
 
+#[derive(Clone, Deserialize)]
+pub struct AuthRequest {
+    token: String,
+}
+
+#[derive(Clone, Serialize, Deserialize)]
+pub struct InfoResponse {
+    username: String,
+    nickname: String,
+    email: String,
+    level: AccountLevel,
+}
+
 #[get("/api/account_service/ping")]
 pub async fn ping() -> web::Json<ResponseBlock<Ping>> {
     web::Json(ResponseBlock {
@@ -61,8 +74,41 @@ pub async fn ping() -> web::Json<ResponseBlock<Ping>> {
     })
 }
 
+#[get("/api/account_service/info")]
+pub async fn info(web::Query(parms): web::Query<AuthRequest>) -> HttpResponse {
+    let config = CONFIG.clone();
+    let key = HS256Key::from_bytes(config.secret.secret.as_bytes());
+    let claims_wrapped = key.verify_token::<AccountToken>(&parms.token, None);
+    let json = if let Ok(claims) = claims_wrapped {
+        if let Ok(user) = db::find_user(claims.custom.pk) {
+            Some(
+                InfoResponse {
+                    username: user.username,
+                    nickname: user.nickname,
+                    email: user.email,
+                    level: match user.permission {
+                        1 => AccountLevel::Admin,
+                        _ => AccountLevel::Default,
+                    },
+                }
+            )
+        } else {
+            None
+        }
+    } else {
+        None
+    };
+    HttpResponse::Ok()
+        .content_type("application/json")
+        .json(ResponseBlock {
+            status: json.is_some(),
+            body: json,
+        })
+}
+
 #[post("/api/account_service/login")]
-pub async fn login(form: web::Json<LoginForm>) -> HttpResponse {
+pub async fn login(form_str: String) -> HttpResponse {
+    let form: LoginForm = serde_json::from_str(&form_str).unwrap_or_default();
     let config = CONFIG.clone();
     let (err, pk) =
         db::login(&form.username, &form.pass).unwrap_or((AccountError::DatabaseError, -1));

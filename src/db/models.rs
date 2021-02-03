@@ -1,7 +1,8 @@
 use crate::db::schema::*;
 use diesel::prelude::*;
+use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub enum AccountLevel {
     Default = 0,
     Admin = 1,

@@ -8,4 +8,5 @@ pub enum AccountError {
     DatabaseError,
     UsernameAlreadyExists,
     EmailAlreadyExists,
+    NetworkError,
 }
