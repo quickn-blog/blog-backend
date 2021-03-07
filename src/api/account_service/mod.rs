@@ -4,64 +4,75 @@ use serde::{Deserialize, Serialize};
 pub mod errors;
 
 use crate::db;
-use crate::CONFIG;
 use crate::db::models::AccountLevel;
+use crate::CONFIG;
 use errors::AccountError;
 // use hmac::{Hmac, NewMac};
 use jwt_simple::prelude::*;
 
 #[derive(Clone, Serialize, Deserialize)]
 pub struct ResponseBlock<T> {
-    status: bool,
-    body: Option<T>,
+    pub status: bool,
+    pub body: Option<T>,
 }
 
 #[derive(Clone, Serialize, Deserialize)]
 pub struct Ping {
-    reply: String,
+    pub reply: String,
 }
 
 #[derive(Clone, Serialize, Deserialize, Debug, Default)]
 pub struct LoginForm {
-    username: String,
-    pass: String,
+    pub username: String,
+    pub pass: String,
 }
 
 #[derive(Clone, Serialize, Deserialize)]
 pub struct LoginResponse {
-    result: AccountError,
-    token: Option<String>, // JWT token
+    pub result: AccountError,
+    pub token: Option<String>, // JWT token
 }
 
 #[derive(Clone, Serialize, Deserialize)]
 pub struct RegisterForm {
-    username: String,
-    pass: String,
-    email: String,
-    nickname: String,
+    pub username: String,
+    pub pass: String,
+    pub email: String,
+    pub nickname: String,
 }
 
 #[derive(Clone, Serialize, Deserialize)]
 pub struct RegisterResponse {
-    result: AccountError,
+    pub result: AccountError,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Deserialize, Serialize)]
 pub struct AccountToken {
-    pk: i32,
+    pub pk: i32,
 }
 
 #[derive(Clone, Deserialize)]
 pub struct AuthRequest {
-    token: String,
+    pub token: String,
+}
+
+#[derive(Clone, Deserialize)]
+pub struct InfoRequest {
+    pub pk: i32,
+}
+
+#[derive(Clone, Serialize, Deserialize)]
+pub struct AsRequest<T> {
+    pub token: String,
+    pub body: T,
 }
 
 #[derive(Clone, Serialize, Deserialize)]
 pub struct InfoResponse {
-    username: String,
-    nickname: String,
-    email: String,
-    level: AccountLevel,
+    pub username: String,
+    pub nickname: String,
+    pub email: String,
+    pub level: AccountLevel,
 }
 
 #[get("/api/account_service/ping")]
@@ -81,17 +92,15 @@ pub async fn info(web::Query(parms): web::Query<AuthRequest>) -> HttpResponse {
     let claims_wrapped = key.verify_token::<AccountToken>(&parms.token, None);
     let json = if let Ok(claims) = claims_wrapped {
         if let Ok(user) = db::find_user(claims.custom.pk) {
-            Some(
-                InfoResponse {
-                    username: user.username,
-                    nickname: user.nickname,
-                    email: user.email,
-                    level: match user.permission {
-                        1 => AccountLevel::Admin,
-                        _ => AccountLevel::Default,
-                    },
-                }
-            )
+            Some(InfoResponse {
+                username: user.username,
+                nickname: user.nickname,
+                email: user.email,
+                level: match user.permission {
+                    1 => AccountLevel::Admin,
+                    _ => AccountLevel::Default,
+                },
+            })
         } else {
             None
         }
@@ -106,9 +115,32 @@ pub async fn info(web::Query(parms): web::Query<AuthRequest>) -> HttpResponse {
         })
 }
 
+#[get("/api/account_service/get_user")]
+pub async fn get_user(web::Query(parms): web::Query<InfoRequest>) -> HttpResponse {
+    let json = 
+        if let Ok(user) = db::find_user(parms.pk) {
+            Some(InfoResponse {
+                username: user.username,
+                nickname: user.nickname,
+                email: user.email,
+                level: match user.permission {
+                    1 => AccountLevel::Admin,
+                    _ => AccountLevel::Default,
+                },
+            })
+    } else {
+        None
+    };
+    HttpResponse::Ok()
+        .content_type("application/json")
+        .json(ResponseBlock {
+            status: json.is_some(),
+            body: json,
+        })
+}
+
 #[post("/api/account_service/login")]
-pub async fn login(form_str: String) -> HttpResponse {
-    let form: LoginForm = serde_json::from_str(&form_str).unwrap_or_default();
+pub async fn login(form: web::Json<LoginForm>) -> HttpResponse {
     let config = CONFIG.clone();
     let (err, pk) =
         db::login(&form.username, &form.pass).unwrap_or((AccountError::DatabaseError, -1));
@@ -148,7 +180,13 @@ pub async fn register(form: web::Json<RegisterForm>) -> HttpResponse {
         result = AccountError::EmailAlreadyExists;
     }
     if v1.is_empty() && v2.is_empty() {
-        if let Err(_) = db::register(&form.username, &form.pass, &form.email, &form.nickname, AccountLevel::Default) {
+        if let Err(_) = db::register(
+            &form.username,
+            &form.pass,
+            &form.email,
+            &form.nickname,
+            AccountLevel::Default,
+        ) {
             result = AccountError::DatabaseError;
         }
     }
@@ -156,9 +194,6 @@ pub async fn register(form: web::Json<RegisterForm>) -> HttpResponse {
         .content_type("application/json")
         .json(ResponseBlock {
             status: true,
-            body: Some(RegisterResponse {
-                result,
-            }),
+            body: Some(RegisterResponse { result }),
         })
 }
-

@@ -1,4 +1,5 @@
 use crate::db::schema::*;
+use chrono::prelude::*;
 use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
 
@@ -18,6 +19,18 @@ pub struct User {
     pub permission: i32,
 }
 
+#[derive(Queryable)]
+pub struct Post {
+    pub id: i32,
+    pub title: String,
+    pub body: String,
+    pub author: i32,
+    pub tags: String,
+    pub permission: i32,
+    pub created_at: NaiveDateTime,
+    pub modified_at: NaiveDateTime,
+}
+
 #[derive(Insertable)]
 #[table_name = "users"]
 pub struct Register<'a> {
@@ -25,5 +38,15 @@ pub struct Register<'a> {
     pub pass: &'a str,
     pub email: &'a str,
     pub nickname: &'a str,
+    pub permission: i32,
+}
+
+#[derive(Insertable)]
+#[table_name = "posts"]
+pub struct NewPost<'a> {
+    pub title: &'a str,
+    pub body: &'a str,
+    pub author: i32,
+    pub tags: &'a str,
     pub permission: i32,
 }

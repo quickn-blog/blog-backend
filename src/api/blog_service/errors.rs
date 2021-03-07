@@ -1,13 +1,10 @@
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Deserialize, Serialize)]
-pub enum AccountError {
+pub enum BlogError {
     Nothing,
-    PassNotMatched,
-    UserNotExists,
+    AuthError,
     DatabaseError,
-    UsernameAlreadyExists,
-    EmailAlreadyExists,
     NetworkError,
-    PasswordVerifyFailed,
+    PermissionError,
 }

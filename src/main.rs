@@ -5,9 +5,9 @@ extern crate hex;
 extern crate hmac;
 extern crate jwt_simple;
 extern crate serde;
+extern crate serde_json;
 extern crate sha3;
 extern crate toml;
-extern crate serde_json;
 #[macro_use]
 extern crate diesel;
 #[macro_use]
@@ -40,6 +40,10 @@ async fn main() -> std::io::Result<()> {
             .service(api::account_service::login)
             .service(api::account_service::register)
             .service(api::account_service::info)
+            .service(api::account_service::get_user)
+            .service(api::blog_service::count_posts)
+            .service(api::blog_service::new_post)
+            .service(api::blog_service::view_post)
     })
     .bind(&format!("{}:{}", config.server.host, config.server.port))?
     .run()

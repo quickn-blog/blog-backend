@@ -1,0 +1,2 @@
+-- Your SQL goes here
+ALTER TABLE posts ADD modified_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP;

@@ -68,3 +68,42 @@ pub fn by_email<'a>(email: &'a str) -> QueryResult<Vec<User>> {
         .filter(users::dsl::email.eq(email))
         .load::<User>(&db)
 }
+
+pub fn create_post<'a>(
+    title: &'a str,
+    body: &'a str,
+    author: i32,
+    tags: Vec<&'a str>,
+    permission: i32,
+) -> QueryResult<Post> {
+    let db = establish_connection();
+    let new_post = NewPost {
+        title,
+        body,
+        author,
+        tags: &tags.join("|"),
+        permission,
+    };
+    diesel::insert_into(posts::table)
+        .values(&new_post)
+        .get_result(&db)
+}
+
+pub fn posts_by<'a>(start: i64, count: i64) -> QueryResult<Vec<Post>> {
+    let db = establish_connection();
+    posts::table
+        .order(posts::modified_at)
+        .offset(start)
+        .limit(count)
+        .load::<Post>(&db)
+}
+
+pub fn count_posts() -> QueryResult<i64> {
+    let db = establish_connection();
+    posts::table.count().get_result(&db)
+}
+
+pub fn by_post_id<'a>(pk: i32) -> QueryResult<Post> {
+    let db = establish_connection();
+    posts::table.find(pk).first(&db)
+}
