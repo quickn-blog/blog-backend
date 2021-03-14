@@ -89,13 +89,14 @@ pub fn create_post<'a>(
         .get_result(&db)
 }
 
-pub fn posts_by<'a>(start: i64, count: i64) -> QueryResult<Vec<Post>> {
+pub fn posts_by<'a>(start: i64, count: i64) -> QueryResult<Vec<i32>> {
     let db = establish_connection();
     posts::table
         .order(posts::modified_at)
+        .select(posts::id)
         .offset(start)
         .limit(count)
-        .load::<Post>(&db)
+        .load::<i32>(&db)
 }
 
 pub fn count_posts() -> QueryResult<i64> {

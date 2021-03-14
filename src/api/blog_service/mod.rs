@@ -12,6 +12,8 @@ use errors::*;
 // use hmac::{Hmac, NewMac};
 use jwt_simple::prelude::*;
 
+use std::cmp::max;
+
 #[derive(Clone, Serialize, Deserialize, Debug, Default)]
 pub struct NewPostForm {
     pub title: String,
@@ -59,6 +61,17 @@ pub struct ViewPostResponse {
 #[derive(Clone, Serialize, Deserialize)]
 pub struct DeletePostResponse {
     pub error: BlogError,
+}
+
+#[derive(Clone, Serialize, Deserialize)]
+pub struct RecentPostsResponse {
+    pub error: BlogError,
+    pub posts: Vec<i64>,
+}
+
+#[derive(Clone, Serialize, Deserialize)]
+pub struct RecentPostsRequest {
+    pub id: i64,
 }
 
 #[post("/api/blog/new_post")]
@@ -211,6 +224,35 @@ pub async fn delete_post(parms: web::Json<AsRequest<DeletePostForm>>) -> HttpRes
             error: BlogError::AuthError,
         })
     };
+    HttpResponse::Ok()
+        .content_type("application/json")
+        .json(ResponseBlock {
+            status: body.is_some(),
+            body,
+        })
+}
+
+#[get("/api/blog/recent_posts")]
+pub async fn recent_posts(web::Query(parms): web::Query<RecentPostsRequest>) -> HttpResponse {
+    let body = if let Ok(cnt) = db::count_posts() {
+        if let Ok(list) = db::posts_by(max(0, cnt-parms.id-1), parms.id) {
+            Some(RecentPostsResponse {
+                error: BlogError::Nothing,
+                posts: list.iter().map(|&s| s as i64).collect(),
+            })
+        } else {
+            Some(RecentPostsResponse {
+                error: BlogError::DatabaseError,
+                posts: vec![],
+            })
+        }
+    } else {
+        Some(RecentPostsResponse {
+            error: BlogError::DatabaseError,
+            posts: vec![],
+        })
+    };
+
     HttpResponse::Ok()
         .content_type("application/json")
         .json(ResponseBlock {
