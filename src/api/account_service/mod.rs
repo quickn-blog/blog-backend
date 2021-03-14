@@ -117,17 +117,16 @@ pub async fn info(web::Query(parms): web::Query<AuthRequest>) -> HttpResponse {
 
 #[get("/api/account_service/get_user")]
 pub async fn get_user(web::Query(parms): web::Query<InfoRequest>) -> HttpResponse {
-    let json = 
-        if let Ok(user) = db::find_user(parms.pk) {
-            Some(InfoResponse {
-                username: user.username,
-                nickname: user.nickname,
-                email: user.email,
-                level: match user.permission {
-                    1 => AccountLevel::Admin,
-                    _ => AccountLevel::Default,
-                },
-            })
+    let json = if let Ok(user) = db::find_user(parms.pk) {
+        Some(InfoResponse {
+            username: user.username,
+            nickname: user.nickname,
+            email: user.email,
+            level: match user.permission {
+                1 => AccountLevel::Admin,
+                _ => AccountLevel::Default,
+            },
+        })
     } else {
         None
     };

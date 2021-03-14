@@ -107,3 +107,8 @@ pub fn by_post_id<'a>(pk: i32) -> QueryResult<Post> {
     let db = establish_connection();
     posts::table.find(pk).first(&db)
 }
+
+pub fn delete_post<'a>(pk: i32) -> QueryResult<usize> {
+    let db = establish_connection();
+    diesel::delete(posts::table.filter(posts::id.eq(pk))).execute(&db)
+}

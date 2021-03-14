@@ -24,6 +24,11 @@ pub struct ViewPostForm {
     pub id: i64,
 }
 
+#[derive(Clone, Serialize, Deserialize, Debug, Default)]
+pub struct DeletePostForm {
+    pub id: i64,
+}
+
 #[derive(Clone, Serialize, Deserialize)]
 pub struct NewPostResponse {
     pub error: BlogError,
@@ -49,6 +54,11 @@ pub struct PublicPost {
 pub struct ViewPostResponse {
     pub error: BlogError,
     pub post: Option<PublicPost>,
+}
+
+#[derive(Clone, Serialize, Deserialize)]
+pub struct DeletePostResponse {
+    pub error: BlogError,
 }
 
 #[post("/api/blog/new_post")]
@@ -166,5 +176,45 @@ pub async fn view_post(parms: web::Json<AsRequest<ViewPostForm>>) -> HttpRespons
         .json(ResponseBlock {
             status: json.is_some(),
             body: json,
+        })
+}
+
+#[post("/api/blog/delete_post")]
+pub async fn delete_post(parms: web::Json<AsRequest<DeletePostForm>>) -> HttpResponse {
+    let config = CONFIG.clone();
+    let key = HS256Key::from_bytes(config.secret.secret.as_bytes());
+    let claims_wrapped = key.verify_token::<AccountToken>(&parms.token, None);
+    let body = if let Ok(claims) = claims_wrapped {
+        if let Ok(post) = db::by_post_id(parms.body.id as i32) {
+            if post.author == claims.custom.pk {
+                if let Ok(_) = db::delete_post(parms.body.id as i32) {
+                    Some(DeletePostResponse {
+                        error: BlogError::Nothing,
+                    })
+                } else {
+                    Some(DeletePostResponse {
+                        error: BlogError::DatabaseError,
+                    })
+                }
+            } else {
+                Some(DeletePostResponse {
+                    error: BlogError::AuthError,
+                })
+            }
+        } else {
+            Some(DeletePostResponse {
+                error: BlogError::DatabaseError,
+            })
+        }
+    } else {
+        Some(DeletePostResponse {
+            error: BlogError::AuthError,
+        })
+    };
+    HttpResponse::Ok()
+        .content_type("application/json")
+        .json(ResponseBlock {
+            status: body.is_some(),
+            body,
         })
 }
