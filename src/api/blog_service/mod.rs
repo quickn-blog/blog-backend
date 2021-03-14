@@ -22,6 +22,14 @@ pub struct NewPostForm {
 }
 
 #[derive(Clone, Serialize, Deserialize, Debug, Default)]
+pub struct EditPostForm {
+    pub pk: i64,
+    pub title: String,
+    pub body: String,
+    pub tag: Vec<String>,
+}
+
+#[derive(Clone, Serialize, Deserialize, Debug, Default)]
 pub struct ViewPostForm {
     pub id: i64,
 }
@@ -33,6 +41,11 @@ pub struct DeletePostForm {
 
 #[derive(Clone, Serialize, Deserialize)]
 pub struct NewPostResponse {
+    pub error: BlogError,
+}
+
+#[derive(Clone, Serialize, Deserialize)]
+pub struct EditPostResponse {
     pub error: BlogError,
 }
 
@@ -258,5 +271,56 @@ pub async fn recent_posts(web::Query(parms): web::Query<RecentPostsRequest>) -> 
         .json(ResponseBlock {
             status: body.is_some(),
             body,
+        })
+}
+
+#[post("/api/blog/edit_post")]
+pub async fn edit_post(parms: web::Json<AsRequest<EditPostForm>>) -> HttpResponse {
+    let config = CONFIG.clone();
+    let key = HS256Key::from_bytes(config.secret.secret.as_bytes());
+    let claims_wrapped = key.verify_token::<AccountToken>(&parms.token, None);
+    let json = if let Ok(claims) = claims_wrapped {
+        if let Ok(_) = db::find_user(claims.custom.pk as i32) {
+            if let Ok(post) = db::by_post_id(parms.body.pk as i32) {
+                if post.author == claims.custom.pk as i32 {
+                    if let Ok(_) = db::edit_post(
+                        parms.body.pk as i32,
+                        &parms.body.title,
+                        &parms.body.body,
+                        &parms.body.tag.join("|"),
+                    ) {
+                        Some(EditPostResponse {
+                            error: BlogError::Nothing,
+                        })
+                    } else {
+                        Some(EditPostResponse {
+                            error: BlogError::DatabaseError,
+                        })
+                    }
+                } else {
+                    Some(EditPostResponse {
+                        error: BlogError::AuthError,
+                    })
+                }
+            } else {
+                Some(EditPostResponse {
+                    error: BlogError::DatabaseError,
+                })
+            }
+        } else {
+            Some(EditPostResponse {
+                error: BlogError::DatabaseError,
+            })
+        }
+    } else {
+        Some(EditPostResponse {
+            error: BlogError::AuthError,
+        })
+    };
+    HttpResponse::Ok()
+        .content_type("application/json")
+        .json(ResponseBlock {
+            status: json.is_some(),
+            body: json,
         })
 }

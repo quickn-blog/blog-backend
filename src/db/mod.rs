@@ -113,3 +113,14 @@ pub fn delete_post<'a>(pk: i32) -> QueryResult<usize> {
     let db = establish_connection();
     diesel::delete(posts::table.filter(posts::id.eq(pk))).execute(&db)
 }
+
+pub fn edit_post<'a>(pk: i32, title: &'a str, body: &'a str, tags: &'a str) -> QueryResult<Post> {
+    let db = establish_connection();
+    diesel::update(posts::table.filter(posts::id.eq(pk)))
+        .set((
+            posts::title.eq(title),
+            posts::body.eq(body),
+            posts::tags.eq(tags),
+        ))
+        .get_result(&db)
+}
