@@ -71,7 +71,7 @@ pub struct RecentPostsResponse {
 
 #[derive(Clone, Serialize, Deserialize)]
 pub struct RecentPostsRequest {
-    pub id: i64,
+    pub count: i64,
 }
 
 #[post("/api/blog/new_post")]
