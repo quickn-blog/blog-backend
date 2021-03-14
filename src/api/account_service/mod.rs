@@ -69,6 +69,7 @@ pub struct AsRequest<T> {
 
 #[derive(Clone, Serialize, Deserialize)]
 pub struct InfoResponse {
+    pub pk: i64,
     pub username: String,
     pub nickname: String,
     pub email: String,
@@ -93,6 +94,7 @@ pub async fn info(web::Query(parms): web::Query<AuthRequest>) -> HttpResponse {
     let json = if let Ok(claims) = claims_wrapped {
         if let Ok(user) = db::find_user(claims.custom.pk) {
             Some(InfoResponse {
+                pk: claims.custom.pk as i64,
                 username: user.username,
                 nickname: user.nickname,
                 email: user.email,
@@ -119,6 +121,7 @@ pub async fn info(web::Query(parms): web::Query<AuthRequest>) -> HttpResponse {
 pub async fn get_user(web::Query(parms): web::Query<InfoRequest>) -> HttpResponse {
     let json = if let Ok(user) = db::find_user(parms.pk) {
         Some(InfoResponse {
+            pk: parms.pk as i64,
             username: user.username,
             nickname: user.nickname,
             email: user.email,
