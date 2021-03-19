@@ -47,6 +47,7 @@ async fn main() -> std::io::Result<()> {
             .service(api::blog_service::delete_post)
             .service(api::blog_service::recent_posts)
             .service(api::blog_service::edit_post)
+            .service(api::blog_service::posts)
     })
     .bind(&format!("{}:{}", config.server.host, config.server.port))?
     .run()

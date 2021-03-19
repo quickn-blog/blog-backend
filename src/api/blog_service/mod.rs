@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::api::account_service::*;
 use crate::db;
-use crate::db::models::{AccountLevel, Post};
+use crate::db::models::{AccountLevel, Post, PostHeader};
 use crate::CONFIG;
 use errors::*;
 // use hmac::{Hmac, NewMac};
@@ -27,6 +27,12 @@ pub struct EditPostForm {
     pub title: String,
     pub body: String,
     pub tag: Vec<String>,
+}
+
+#[derive(Clone, Serialize, Deserialize, Debug, Default)]
+pub struct PostsForm {
+    pub start: i64,
+    pub count: i64,
 }
 
 #[derive(Clone, Serialize, Deserialize, Debug, Default)]
@@ -80,6 +86,12 @@ pub struct DeletePostResponse {
 pub struct RecentPostsResponse {
     pub error: BlogError,
     pub posts: Vec<i64>,
+}
+
+#[derive(Clone, Serialize, Deserialize)]
+pub struct PostsResponse {
+    pub error: BlogError,
+    pub posts: Vec<PostHeader>,
 }
 
 #[derive(Clone, Serialize, Deserialize)]
@@ -322,5 +334,27 @@ pub async fn edit_post(parms: web::Json<AsRequest<EditPostForm>>) -> HttpRespons
         .json(ResponseBlock {
             status: json.is_some(),
             body: json,
+        })
+}
+
+#[get("/api/blog/posts")]
+pub async fn posts(web::Query(parms): web::Query<PostsForm>) -> HttpResponse {
+    let body = if let Ok(list) = db::post_header_by(parms.start, parms.count) {
+            Some(PostsResponse {
+                error: BlogError::Nothing,
+                posts: list,
+            })
+        } else {
+            Some(PostsResponse {
+                error: BlogError::DatabaseError,
+                posts: vec![],
+            })
+        };
+
+    HttpResponse::Ok()
+        .content_type("application/json")
+        .json(ResponseBlock {
+            status: body.is_some(),
+            body,
         })
 }

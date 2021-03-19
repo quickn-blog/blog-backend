@@ -7,6 +7,8 @@ use diesel::prelude::*;
 use models::*;
 use schema::*;
 use sha3::{Digest, Sha3_256};
+use chrono::prelude::*;
+use serde::{Deserialize, Serialize};
 
 pub fn register<'a>(
     username: &'a str,
@@ -97,6 +99,16 @@ pub fn posts_by<'a>(start: i64, count: i64) -> QueryResult<Vec<i32>> {
         .offset(start)
         .limit(count)
         .load::<i32>(&db)
+}
+
+pub fn post_header_by<'a>(start: i64, count: i64) -> QueryResult<Vec<PostHeader>> {
+    let db = establish_connection();
+    posts::table
+        .order(posts::modified_at)
+        .select((posts::id, posts::title, posts::author, posts::created_at, posts::modified_at))
+        .offset(start)
+        .limit(count)
+        .load::<PostHeader>(&db)
 }
 
 pub fn count_posts() -> QueryResult<i64> {

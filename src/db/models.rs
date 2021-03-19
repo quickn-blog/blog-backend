@@ -50,3 +50,12 @@ pub struct NewPost<'a> {
     pub tags: &'a str,
     pub permission: i32,
 }
+
+#[derive(Queryable, Clone, Serialize, Deserialize)]
+pub struct PostHeader {
+    pub id: i32,
+    pub title: String,
+    pub author: i32,
+    pub created_at: NaiveDateTime,
+    pub modified_at: NaiveDateTime,
+}
