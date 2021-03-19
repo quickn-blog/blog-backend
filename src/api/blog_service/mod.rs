@@ -340,16 +340,16 @@ pub async fn edit_post(parms: web::Json<AsRequest<EditPostForm>>) -> HttpRespons
 #[get("/api/blog/posts")]
 pub async fn posts(web::Query(parms): web::Query<PostsForm>) -> HttpResponse {
     let body = if let Ok(list) = db::post_header_by(parms.start, parms.count) {
-            Some(PostsResponse {
-                error: BlogError::Nothing,
-                posts: list,
-            })
-        } else {
-            Some(PostsResponse {
-                error: BlogError::DatabaseError,
-                posts: vec![],
-            })
-        };
+        Some(PostsResponse {
+            error: BlogError::Nothing,
+            posts: list,
+        })
+    } else {
+        Some(PostsResponse {
+            error: BlogError::DatabaseError,
+            posts: vec![],
+        })
+    };
 
     HttpResponse::Ok()
         .content_type("application/json")

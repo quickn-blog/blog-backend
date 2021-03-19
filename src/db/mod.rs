@@ -3,12 +3,12 @@ pub mod schema;
 
 use crate::api::account_service::errors::AccountError;
 use crate::middlewares::postgresql::establish_connection;
+use chrono::prelude::*;
 use diesel::prelude::*;
 use models::*;
 use schema::*;
-use sha3::{Digest, Sha3_256};
-use chrono::prelude::*;
 use serde::{Deserialize, Serialize};
+use sha3::{Digest, Sha3_256};
 
 pub fn register<'a>(
     username: &'a str,
@@ -94,7 +94,7 @@ pub fn create_post<'a>(
 pub fn posts_by<'a>(start: i64, count: i64) -> QueryResult<Vec<i32>> {
     let db = establish_connection();
     posts::table
-        .order(posts::modified_at)
+        .order(posts::modified_at.desc())
         .select(posts::id)
         .offset(start)
         .limit(count)
@@ -104,8 +104,14 @@ pub fn posts_by<'a>(start: i64, count: i64) -> QueryResult<Vec<i32>> {
 pub fn post_header_by<'a>(start: i64, count: i64) -> QueryResult<Vec<PostHeader>> {
     let db = establish_connection();
     posts::table
-        .order(posts::modified_at)
-        .select((posts::id, posts::title, posts::author, posts::created_at, posts::modified_at))
+        .order(posts::modified_at.desc())
+        .select((
+            posts::id,
+            posts::title,
+            posts::author,
+            posts::created_at,
+            posts::modified_at,
+        ))
         .offset(start)
         .limit(count)
         .load::<PostHeader>(&db)
