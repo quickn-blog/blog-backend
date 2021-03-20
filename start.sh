@@ -1,2 +1,2 @@
-diesel run migration
+diesel migration run
 blog-backend
