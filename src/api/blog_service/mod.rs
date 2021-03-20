@@ -105,16 +105,28 @@ pub async fn new_post(parms: web::Json<AsRequest<NewPostForm>>) -> HttpResponse 
     let key = HS256Key::from_bytes(config.secret.secret.as_bytes());
     let claims_wrapped = key.verify_token::<AccountToken>(&parms.token, None);
     let json = if let Ok(claims) = claims_wrapped {
-        if let Ok(_) = db::create_post(
-            &parms.body.title,
-            &parms.body.body,
-            claims.custom.pk,
-            parms.body.tag.iter().map(|s| s.as_str()).collect(),
-            0,
-        ) {
-            Some(NewPostResponse {
-                error: BlogError::Nothing,
-            })
+        if let Ok(user) = db::find_user(claims.custom.pk) {
+            if user.permission == 1 {
+                if let Ok(_) = db::create_post(
+                    &parms.body.title,
+                    &parms.body.body,
+                    claims.custom.pk,
+                    parms.body.tag.iter().map(|s| s.as_str()).collect(),
+                    0,
+                ) {
+                    Some(NewPostResponse {
+                        error: BlogError::Nothing,
+                    })
+                } else {
+                    Some(NewPostResponse {
+                        error: BlogError::DatabaseError,
+                    })
+                }
+            } else {
+                Some(NewPostResponse {
+                    error: BlogError::AuthError,
+                })
+            }
         } else {
             Some(NewPostResponse {
                 error: BlogError::DatabaseError,

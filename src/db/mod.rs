@@ -122,6 +122,11 @@ pub fn count_posts() -> QueryResult<i64> {
     posts::table.count().get_result(&db)
 }
 
+pub fn count_users() -> QueryResult<i64> {
+    let db = establish_connection();
+    users::table.count().get_result(&db)
+}
+
 pub fn by_post_id<'a>(pk: i32) -> QueryResult<Post> {
     let db = establish_connection();
     posts::table.find(pk).first(&db)

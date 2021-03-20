@@ -182,13 +182,21 @@ pub async fn register(form: web::Json<RegisterForm>) -> HttpResponse {
         result = AccountError::EmailAlreadyExists;
     }
     if v1.is_empty() && v2.is_empty() {
-        if let Err(_) = db::register(
-            &form.username,
-            &form.pass,
-            &form.email,
-            &form.nickname,
-            AccountLevel::Default,
-        ) {
+        if let Ok(cnt) = db::count_users() {
+            if let Err(_) = db::register(
+                &form.username,
+                &form.pass,
+                &form.email,
+                &form.nickname,
+                if cnt == 0 {
+                    AccountLevel::Admin
+                } else {
+                    AccountLevel::Default
+                },
+            ) {
+                result = AccountError::DatabaseError;
+            }
+        } else {
             result = AccountError::DatabaseError;
         }
     }
