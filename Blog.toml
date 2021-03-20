@@ -1,6 +1,6 @@
 [server]
 host = "127.0.0.1"
-port = 8085
+port = 8081
 database_url = "postgres://quickn:testserver@localhost/blog"
 
 [blog]
