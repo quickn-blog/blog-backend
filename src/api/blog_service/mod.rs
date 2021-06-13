@@ -272,7 +272,7 @@ pub async fn delete_post(parms: web::Json<AsRequest<DeletePostForm>>) -> HttpRes
 #[get("/api/blog/recent_posts")]
 pub async fn recent_posts(web::Query(parms): web::Query<RecentPostsRequest>) -> HttpResponse {
     let body = if let Ok(cnt) = db::count_posts() {
-        if let Ok(list) = db::posts_by(max(0, cnt - parms.count), parms.count) {
+        if let Ok(list) = db::posts_by(0, parms.count) {
             Some(RecentPostsResponse {
                 error: BlogError::Nothing,
                 posts: list.iter().map(|&s| s as i64).collect(),
