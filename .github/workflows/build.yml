@@ -1,0 +1,9 @@
+name: Build quickn-blog
+
+on: [push]
+
+jobs:
+  build:
+    runs-on: docker-latest
+    steps:
+      - run: docker build . tag:blog-backend
